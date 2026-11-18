@@ -1,0 +1,15 @@
+.env
+*.key
+venv/
+.venv/
+__pycache__/
+node_modules/
+models/
+*.safetensors
+*.gguf
+*.pt
+*.bin
+.venv/
+__pycache__/
+*.gguf
+models/

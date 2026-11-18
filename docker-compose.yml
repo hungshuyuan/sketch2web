@@ -1,0 +1,48 @@
+services:
+  llm:
+    build:
+      context: ./llm
+      args:
+        LLAMA_REF: ${LLAMA_REF:-master}
+    image: ${REGISTRY:-local}/sketch2web-llm:latest
+    restart: unless-stopped
+    volumes:
+      - ${MODEL_DIR:-~/models/qwen38}:/models:ro
+    command: >
+      -m /models/UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00004.gguf
+      --mmproj /models/mmproj-F16.gguf
+      --alias Qwen3.8-Flash-Next
+      --host 0.0.0.0 --port 8080
+      -ngl 999 -c ${CTX_SIZE:-65536} -np 1
+      --flash-attn on --jinja
+      --reasoning-format deepseek
+      --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 900s
+    expose:
+      - "8080"
+
+  app:
+    build: .
+    image: ${REGISTRY:-local}/sketch2web-app:latest
+    restart: unless-stopped
+    environment:
+      LAB_API_BASE: http://llm:8080/v1
+      LAB_API_KEY: local
+      LAB_MODEL: Qwen3.8-Flash-Next
+    ports:
+      - "7860:7860"
+    depends_on:
+      llm:
+        condition: service_healthy

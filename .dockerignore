@@ -1,0 +1,7 @@
+.venv/
+.git/
+llm/
+scripts/
+*.gguf
+__pycache__/
+.env
